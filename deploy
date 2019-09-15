@@ -102,6 +102,12 @@ do_system_check() {
     exit 1
   fi
 
+  if [[ -z $(which ansible) ]]
+  then
+    echo '✗ No ansible detected!'
+    exit 1
+  fi
+
   echo '✓ System checks pass!'
   exit
 }

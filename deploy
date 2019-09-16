@@ -9,7 +9,9 @@ usage() {
   echo
   echo 'usage:'
   echo
-  echo '  deploy.sh [OPTIONS]'
+  echo '  deploy.sh [OPTIONS] [ARGS]'
+  echo
+  echo '  ARGS are passed on verbatim to `terraform plan`'
   echo
   echo '  OPTIONS:'
   echo
@@ -67,28 +69,31 @@ main() {
   then
     detect_and_import_ssh_keys
   fi
-  exit
 
   # Initialize the cluster infrastructure with Terraform
   terraform init
-  terraform plan -out=cluster.plan
+  terraform plan -out=cluster.plan $@ # forward positional args
   terraform apply cluster.plan
 
-  ip1="$(terraform output node_1_ip)"
-  ip2="$(terraform output node_2_ip)"
-  ip3="$(terraform output node_3_ip)"
+  ip1="$(terraform output node_1_ipv4)"
+  ip2="$(terraform output node_2_ipv4)"
+  ip3="$(terraform output node_3_ipv4)"
 
   for ip in "$ip1" "$ip2" "$ip3"
   do
-    install_flynn "$ip"
+    #install_flynn "$ip"
+    echo "TODO install flynn on $ip..."
   done
 
-  ssh root@"$ip1" -t 'flynn-host init --init-discovery'
+  #ssh root@"$ip1" -t 'flynn-host init --init-discovery'
 
+  echo '✓ System checks pass!'
 }
 
 
 do_system_check() {
+  echo 'checking your system...'
+
   # Unless we're skipping SSH key import, we need the DO CLI
   if [[ -z "$SKIP_SSH_IMPORT" && -z $(which doctl) ]]
   then
@@ -109,7 +114,6 @@ do_system_check() {
   fi
 
   echo '✓ System checks pass!'
-  exit
 }
 
 
@@ -144,4 +148,4 @@ install_flynn() {
 
 
 
-main
+main $@

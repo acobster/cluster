@@ -7,7 +7,7 @@
 # Prompt for the DigitalOcean access token
 variable "do_api_token" {}
 
-# Deploy to San Francisco region 2
+# Deploy to San Francisco region 2 by default
 variable "cluster_region" {
   default = "sfo2"
 }
@@ -18,11 +18,7 @@ variable "cluster_region" {
 #
 #   doctl compute ssh-key list
 #
-# If you're applying this plan from any machine other than Coby's laptop,
-# you'll probably want to update this first.
-variable "ssh_key" {
-  default = 23249233
-}
+variable "ssh_key" {}
 
 
 # Import the Random provider.

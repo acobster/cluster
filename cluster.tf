@@ -7,30 +7,22 @@
 # Prompt for the DigitalOcean access token
 variable "do_api_token" {}
 
+# The public ssh key to authorize on each cluster node
+# NOTE: we do this with the public key file directly instead of via a
+# digitalocean_ssh_key resource, since the latter insecurely authorizes root
+# login over SSH.
+variable "public_key" {}
+
+# Create a user with the given password hash
+variable "password_hash"   {}
+
+# Where the cluster lives
+variable "cluster_domain_name" {}
+
 # Deploy to San Francisco region 2 by default
 variable "cluster_region" {
   default = "sfo2"
 }
-
-# Which ssh key to place on each cluster node
-# To list SSH keys with the DO CLI, do:
-#
-#   doctl compute ssh-key list
-#
-variable "ssh_key" {}
-
-# Install flynn on Droplet creation!
-variable "install_flynn" {
-  default = <<YAML
-#cloud-config
-  runcmd:
-  - curl -fsSL -o /tmp/install-flynn https://dl.flynn.io/install-flynn
-  - bash /tmp/install-flynn
-YAML
-}
-
-# Where the cluster lives
-variable "cluster_domain_name" {}
 
 
 # Import the Random provider.
@@ -67,8 +59,7 @@ resource "digitalocean_droplet" "node_1" {
   backups            = true
   ipv6               = true
   private_networking = true
-  ssh_keys           = ["${var.ssh_key}"]
-  user_data          = "${var.install_flynn}"
+  user_data          = "${templatefile("cloud-config.yaml", { password_hash = var.password_hash, public_key = var.public_key })}"
 }
 
 resource "digitalocean_droplet" "node_2" {
@@ -80,8 +71,7 @@ resource "digitalocean_droplet" "node_2" {
   backups            = true
   ipv6               = true
   private_networking = true
-  ssh_keys           = ["${var.ssh_key}"]
-  user_data          = "${var.install_flynn}"
+  user_data          = "${templatefile("cloud-config.yaml", { password_hash = var.password_hash, public_key = var.public_key })}"
 }
 
 resource "digitalocean_droplet" "node_3" {
@@ -93,8 +83,7 @@ resource "digitalocean_droplet" "node_3" {
   backups            = true
   ipv6               = true
   private_networking = true
-  ssh_keys           = ["${var.ssh_key}"]
-  user_data          = "${var.install_flynn}"
+  user_data          = "${templatefile("cloud-config.yaml", { password_hash = var.password_hash, public_key = var.public_key })}"
 }
 
 

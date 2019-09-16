@@ -19,8 +19,6 @@ usage() {
   echo
   echo '  -S|--skip-system-check skip checking this system for dependencies'
   echo
-  echo '  -K|--skip-ssh skip checking for/importing local SSH keys'
-  echo
 }
 
 
@@ -39,15 +37,6 @@ case $key in
     SKIP_SYSTEM_CHECK=1
     shift # past argument
     ;;
-  -K|--skip-ssh-import)
-    SKIP_SSH_IMPORT=1
-    shift # past argument
-    ;;
-  -y|--arg-with-value)
-    VALARG="$2"
-    shift # past argument
-    shift # past value
-    ;;
   *)
     POSITIONAL+=("$1") # save it in an array for later
     shift # past argument
@@ -65,11 +54,6 @@ main() {
     do_system_check
   fi
 
-  if [[ -z "$SKIP_SSH_IMPORT" ]]
-  then
-    detect_and_import_ssh_keys
-  fi
-
   # Initialize the cluster infrastructure with Terraform
   terraform init
   terraform plan -out=cluster.plan $@ # forward positional args
@@ -81,11 +65,8 @@ main() {
 
   for ip in "$ip1" "$ip2" "$ip3"
   do
-    #install_flynn "$ip"
     echo "TODO install flynn on $ip..."
   done
-
-  #ssh root@"$ip1" -t 'flynn-host init --init-discovery'
 
   echo '✓ System checks pass!'
 }
@@ -93,13 +74,6 @@ main() {
 
 do_system_check() {
   echo 'checking your system...'
-
-  # Unless we're skipping SSH key import, we need the DO CLI
-  if [[ -z "$SKIP_SSH_IMPORT" && -z $(which doctl) ]]
-  then
-    echo '✗ No doctl (DigitalOcean CLI) detected!'
-    exit 1
-  fi
 
   if [[ -z $(which terraform) ]]
   then
@@ -114,31 +88,6 @@ do_system_check() {
   fi
 
   echo '✓ System checks pass!'
-}
-
-
-detect_and_import_ssh_keys() {
-  DEFAULT_PUBKEY="$HOME/.ssh/id_rsa.pub"
-  if [[ -f "$DEFAULT_PUBKEY" ]]
-  then
-    # Read PUBKEY from stdin
-    read -p "public key file: (${DEFAULT_PUBKEY}) " PUBKEY
-    PUBKEY=${PUBKEY:-"$DEFAULT_PUBKEY"}
-  else
-    PUBKEY=$(read -p "public key file: ")
-  fi
-
-  if [[ -f "$PUBKEY" ]]
-  then
-    echo "importing public key ${PUBKEY}..."
-    # Read ssh keyname from stdin
-    doctl compute ssh-key import \
-      $(read -p 'Name this SSH key: ' KEY_NAME ; echo $KEY_NAME) \
-      --public-key-file "$PUBKEY"
-  else
-    echo "invalid public key: ${PUBKEY}; file not found"
-    exit 1
-  fi
 }
 
 

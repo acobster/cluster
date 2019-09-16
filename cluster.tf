@@ -89,9 +89,7 @@ resource "digitalocean_droplet" "node_3" {
 resource "digitalocean_firewall" "flynn_firewall" {
   name = "flynn-recommended-firewall-with-ssh"
 
-  droplet_ids = ["${digitalocean_droplet.node_1.id}",
-                 "${digitalocean_droplet.node_2.id}",
-                 "${digitalocean_droplet.node_3.id}"]
+  tags = ["${digitalocean_tag.cluster.id}"]
 
   inbound_rule {
       protocol           = "tcp"

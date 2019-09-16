@@ -29,6 +29,9 @@ variable "install_flynn" {
 YAML
 }
 
+# Where the cluster lives
+variable "cluster_domain_name" {}
+
 
 # Import the Random provider.
 # We'll use this to generate names for each Droplet in our cluster.
@@ -179,6 +182,35 @@ resource "digitalocean_firewall" "flynn_firewall" {
       protocol                = "icmp"
       destination_addresses   = ["0.0.0.0/0", "::/0"]
   }
+}
+
+
+# Configure DNS for the main cluster domain
+resource "digitalocean_domain" "cluster_domain" {
+  name = "${var.cluster_domain_name}"
+}
+
+
+# Point the domain at our cluster's IPs
+resource "digitalocean_record" "cluster_domain_a1" {
+  name   = "@"
+  type   = "A"
+  domain = "${digitalocean_domain.cluster_domain.name}"
+  value  = "${digitalocean_droplet.node_1.ipv4_address}"
+}
+
+resource "digitalocean_record" "cluster_domain_a2" {
+  name   = "@"
+  type   = "A"
+  domain = "${digitalocean_domain.cluster_domain.name}"
+  value  = "${digitalocean_droplet.node_2.ipv4_address}"
+}
+
+resource "digitalocean_record" "cluster_domain_a3" {
+  name   = "@"
+  type   = "A"
+  domain = "${digitalocean_domain.cluster_domain.name}"
+  value  = "${digitalocean_droplet.node_3.ipv4_address}"
 }
 
 

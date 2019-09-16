@@ -12,13 +12,22 @@ variable "cluster_region" {
   default = "sfo2"
 }
 
-
 # Which ssh key to place on each cluster node
 # To list SSH keys with the DO CLI, do:
 #
 #   doctl compute ssh-key list
 #
 variable "ssh_key" {}
+
+# Install flynn on Droplet creation!
+variable "install_flynn" {
+  default = <<YAML
+#cloud-config
+  runcmd:
+  - curl -fsSL -o /tmp/install-flynn https://dl.flynn.io/install-flynn
+  - bash /tmp/install-flynn
+YAML
+}
 
 
 # Import the Random provider.
@@ -56,6 +65,7 @@ resource "digitalocean_droplet" "node_1" {
   ipv6               = true
   private_networking = true
   ssh_keys           = ["${var.ssh_key}"]
+  user_data          = "${var.install_flynn}"
 }
 
 resource "digitalocean_droplet" "node_2" {
@@ -68,6 +78,7 @@ resource "digitalocean_droplet" "node_2" {
   ipv6               = true
   private_networking = true
   ssh_keys           = ["${var.ssh_key}"]
+  user_data          = "${var.install_flynn}"
 }
 
 resource "digitalocean_droplet" "node_3" {
@@ -80,6 +91,7 @@ resource "digitalocean_droplet" "node_3" {
   ipv6               = true
   private_networking = true
   ssh_keys           = ["${var.ssh_key}"]
+  user_data          = "${var.install_flynn}"
 }
 
 

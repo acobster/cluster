@@ -92,6 +92,30 @@ resource "digitalocean_firewall" "flynn_firewall" {
   tags = ["${digitalocean_tag.cluster.id}"]
 
   inbound_rule {
+      protocol         = "tcp"
+      port_range       = "1-65535"
+      source_tags      = ["${digitalocean_tag.cluster.id}"]
+  }
+
+  inbound_rule {
+      protocol         = "udp"
+      port_range       = "1-65535"
+      source_tags      = ["${digitalocean_tag.cluster.id}"]
+  }
+
+  outbound_rule {
+      protocol         = "tcp"
+      port_range       = "1-65535"
+      destination_tags = ["${digitalocean_tag.cluster.id}"]
+  }
+
+  outbound_rule {
+      protocol         = "udp"
+      port_range       = "1-65535"
+      destination_tags = ["${digitalocean_tag.cluster.id}"]
+  }
+
+  inbound_rule {
       protocol           = "tcp"
       port_range         = "22"
       source_addresses   = ["0.0.0.0/0", "::/0"]

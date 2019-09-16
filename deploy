@@ -19,6 +19,8 @@ usage() {
   echo
   echo '  -S|--skip-system-check skip checking this system for dependencies'
   echo
+  echo '  -R|--skip-resource-creation skip creation of DO droplets, etc. via terraform'
+  echo
 }
 
 
@@ -35,6 +37,10 @@ case $key in
     ;;
   -S|--skip-system-check)
     SKIP_SYSTEM_CHECK=1
+    shift # past argument
+    ;;
+  -R|--skip-resource-creation)
+    SKIP_RESOURCE_CREATION=1
     shift # past argument
     ;;
   *)
@@ -54,10 +60,15 @@ main() {
     do_system_check
   fi
 
-  # Initialize the cluster infrastructure with Terraform
-  terraform init
-  terraform plan -out=cluster.plan $@ # forward positional args
-  terraform apply cluster.plan
+  if [[ -z "$SKIP_RESOURCE_CREATION" ]]
+  then
+    # Initialize the cluster infrastructure with Terraform
+    terraform init
+    terraform plan -out=cluster.plan $@ # forward positional args
+    terraform apply cluster.plan
+  else
+    echo 'skipping Terraform resource creation...'
+  fi
 
   ip1="$(terraform output node_1_ipv4)"
   ip2="$(terraform output node_2_ipv4)"
@@ -68,7 +79,7 @@ main() {
     echo "TODO install flynn on $ip..."
   done
 
-  echo '✓ System checks pass!'
+  echo '✓ Cluster created!'
 }
 
 

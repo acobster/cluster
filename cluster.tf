@@ -49,7 +49,7 @@ resource "random_id" "node_3_id" { byte_length = 8 }
 resource "digitalocean_droplet" "node_1" {
   name               = "cluster-${random_id.node_1_id.hex}"
   image              = "ubuntu-16-04-x64"
-  region             = "sfo2"
+  region             = "${var.cluster_region}"
   size               = "2gb"
   tags               = ["${digitalocean_tag.cluster.id}"]
   backups            = true
@@ -61,7 +61,7 @@ resource "digitalocean_droplet" "node_1" {
 resource "digitalocean_droplet" "node_2" {
   name               = "cluster-${random_id.node_2_id.hex}"
   image              = "ubuntu-16-04-x64"
-  region             = "sfo2"
+  region             = "${var.cluster_region}"
   size               = "2gb"
   tags               = ["${digitalocean_tag.cluster.id}"]
   backups            = true
@@ -73,7 +73,7 @@ resource "digitalocean_droplet" "node_2" {
 resource "digitalocean_droplet" "node_3" {
   name               = "cluster-${random_id.node_3_id.hex}"
   image              = "ubuntu-16-04-x64"
-  region             = "sfo2"
+  region             = "${var.cluster_region}"
   size               = "2gb"
   tags               = ["${digitalocean_tag.cluster.id}"]
   backups            = true

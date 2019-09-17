@@ -202,6 +202,14 @@ resource "digitalocean_record" "cluster_domain_a3" {
   value  = "${digitalocean_droplet.node_3.ipv4_address}"
 }
 
+# Alias *.cluster.example.com -> cluster.example.com
+resource "digitalocean_record" "cluster_domain_wildcard" {
+  type   = "CNAME"
+  domain = "${digitalocean_domain.cluster_domain.name}"
+  name   = "*"
+  value  = "@"
+}
+
 
 # Output our DigitalOcean Droplet names and IPV4 addresses.
 output "node_1_name" { value = digitalocean_droplet.node_1.name }

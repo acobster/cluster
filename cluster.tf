@@ -16,6 +16,10 @@ variable "public_key" {}
 # Create a user with the given password hash
 variable "password_hash"   {}
 
+# We'll generate a discovery URL ahead of time, and pass it to cloud-init
+# via this variable
+variable "discovery_url"   {}
+
 # Where the cluster lives
 variable "cluster_domain_name" {}
 
@@ -46,12 +50,12 @@ resource "digitalocean_tag" "cluster" {
 
 
 # Create three Droplets on DigitalOcean, generating a random name for each one.
-resource "random_id" "node_1_id" { byte_length = 8 }
+resource "random_id" "leader_node_id" { byte_length = 8 }
 resource "random_id" "node_2_id" { byte_length = 8 }
 resource "random_id" "node_3_id" { byte_length = 8 }
 
-resource "digitalocean_droplet" "node_1" {
-  name               = "cluster-${random_id.node_1_id.hex}"
+resource "digitalocean_droplet" "leader_node" {
+  name               = "cluster-${random_id.leader_node_id.hex}"
   image              = "ubuntu-16-04-x64"
   region             = "${var.cluster_region}"
   size               = "2gb"
@@ -59,7 +63,7 @@ resource "digitalocean_droplet" "node_1" {
   backups            = true
   ipv6               = true
   private_networking = true
-  user_data          = "${templatefile("cloud-config.yaml", { password_hash = var.password_hash, public_key = var.public_key })}"
+  user_data          = "${templatefile("cloud-config.yaml", { password_hash = var.password_hash, public_key = var.public_key, discovery_url = var.discovery_url, cluster_domain_name = var.cluster_domain_name, bootstrap_arg = "--leader" })}"
 }
 
 resource "digitalocean_droplet" "node_2" {
@@ -71,7 +75,7 @@ resource "digitalocean_droplet" "node_2" {
   backups            = true
   ipv6               = true
   private_networking = true
-  user_data          = "${templatefile("cloud-config.yaml", { password_hash = var.password_hash, public_key = var.public_key })}"
+  user_data          = "${templatefile("cloud-config.yaml", { password_hash = var.password_hash, public_key = var.public_key, discovery_url = var.discovery_url, cluster_domain_name = var.cluster_domain_name, bootstrap_arg = "--follow" })}"
 }
 
 resource "digitalocean_droplet" "node_3" {
@@ -83,7 +87,7 @@ resource "digitalocean_droplet" "node_3" {
   backups            = true
   ipv6               = true
   private_networking = true
-  user_data          = "${templatefile("cloud-config.yaml", { password_hash = var.password_hash, public_key = var.public_key })}"
+  user_data          = "${templatefile("cloud-config.yaml", { password_hash = var.password_hash, public_key = var.public_key, discovery_url = var.discovery_url, cluster_domain_name = var.cluster_domain_name, bootstrap_arg = "--follow" })}"
 }
 
 
@@ -185,7 +189,7 @@ resource "digitalocean_record" "cluster_domain_a1" {
   name   = "@"
   type   = "A"
   domain = "${digitalocean_domain.cluster_domain.name}"
-  value  = "${digitalocean_droplet.node_1.ipv4_address}"
+  value  = "${digitalocean_droplet.leader_node.ipv4_address}"
 }
 
 resource "digitalocean_record" "cluster_domain_a2" {
@@ -212,9 +216,9 @@ resource "digitalocean_record" "cluster_domain_wildcard" {
 
 
 # Output our DigitalOcean Droplet names and IPV4 addresses.
-output "node_1_name" { value = digitalocean_droplet.node_1.name }
+output "leader_node_name" { value = digitalocean_droplet.leader_node.name }
 output "node_2_name" { value = digitalocean_droplet.node_2.name }
 output "node_3_name" { value = digitalocean_droplet.node_3.name }
-output "node_1_ipv4" { value = digitalocean_droplet.node_1.ipv4_address }
+output "leader_node_ipv4" { value = digitalocean_droplet.leader_node.ipv4_address }
 output "node_2_ipv4" { value = digitalocean_droplet.node_2.ipv4_address }
 output "node_3_ipv4" { value = digitalocean_droplet.node_3.ipv4_address }

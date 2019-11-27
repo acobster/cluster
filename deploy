@@ -60,24 +60,38 @@ main() {
     do_system_check
   fi
 
+  DISCOVERY_URL=$(flynn-host init --init-discovery --file ./host.json)
+  echo "Generated Flynn discovery token URL: ${DISCOVERY_URL}"
+
   if [[ -z "$SKIP_RESOURCE_CREATION" ]]
   then
     # Initialize the cluster infrastructure with Terraform
     terraform init
-    terraform plan -out=cluster.plan $@ # forward positional args
+    terraform plan -out=cluster.plan -var discovery_url="$DISCOVERY_URL" $@ # forward positional args
     terraform apply cluster.plan
+
+    status=$?
+    if [[ $status != 0 ]]
+    then
+      echo 'Failed to apply Terraform plan'
+      exit $status
+    fi
   else
     echo 'skipping Terraform resource creation...'
   fi
 
-  ip1="$(terraform output node_1_ipv4)"
-  ip2="$(terraform output node_2_ipv4)"
-  ip3="$(terraform output node_3_ipv4)"
+  leader_ip=$(terraform output leader_node_ipv4)
 
-  for ip in "$ip1" "$ip2" "$ip3"
+  status=255 # assume failure at first
+  while [[ $status != 0 ]]
   do
-    echo "TODO install flynn on $ip..."
+    echo "Waiting for ${leader_ip} to come online..."
+    ssh flynn@"$leader_ip" -t echo # dummy command just to test connection
+    status=$?
+    sleep 1
   done
+
+  ssh flynn@"$leader_ip" -t 'sudo /tmp/flynn-host-bootstrap.sh'
 
   echo '✓ Cluster created!'
 }
@@ -92,20 +106,8 @@ do_system_check() {
     exit 1
   fi
 
-  if [[ -z $(which ansible) ]]
-  then
-    echo '✗ No ansible detected!'
-    exit 1
-  fi
-
   echo '✓ System checks pass!'
 }
-
-
-install_flynn() {
-  ssh root@"$1" -t 'bash < <(curl -fsSL https://dl.flynn.io/install-flynn)'
-}
-
 
 
 main $@

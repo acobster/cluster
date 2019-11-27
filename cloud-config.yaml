@@ -4,14 +4,33 @@
 runcmd:
 - curl -fsSL -o /tmp/install-flynn https://dl.flynn.io/install-flynn
 - bash /tmp/install-flynn
+- flynn-host init --discovery ${discovery_url}
+- systemctl start flynn-host
 
 users:
 - default
 - name: flynn
   gecos: Flynn User
-  sudo: ALL=(ALL:ALL) ALL
+  sudo:
+  - ALL=(ALL) NOPASSWD:/usr/local/bin/flynn-host
+  - ALL=(ALL:ALL) ALL
   passwd: ${password_hash}
   lock_passwd: false
   ssh_authorized_keys:
     - ${public_key}
 
+write_files:
+- content: |
+    #!/bin/bash
+
+    while [[ -z $(systemctl status flynn-host | grep 'Started Flynn') ]]
+    do
+      echo 'waiting for flynn-host daemon to start...'
+      sleep 3
+    done
+
+    CLUSTER_DOMAIN=${cluster_domain_name} flynn-host bootstrap --min-hosts 3 --discovery ${discovery_url}
+
+  path: /tmp/flynn-host-bootstrap.sh
+  owner: flynn:flynn
+  permissions: '0755'

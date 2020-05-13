@@ -35,3 +35,16 @@ Run `deploy -h` for usage. You can pass additional args to `terraform plan` dire
 ```bash
 ./deploy -var do_api_token=YOUR_TOKEN
 ```
+
+You can also use a Terraform [`cluster.tfvars`](https://learn.hashicorp.com/terraform/getting-started/variables.html#from-a-file) file to override these once:
+
+```
+do_api_token = "asdf-qwerty"
+public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAA... tamayo@toast"
+```
+
+Then, specify the file on the command line:
+
+```bash
+./deploy -var-file=cluster.tfvars
+```
